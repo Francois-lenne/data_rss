@@ -1,2 +1,4 @@
 flux_rss/*
 *.csv
+*.ipynb
+*.R

@@ -4,7 +4,12 @@
 import feedparser
 import pandas as pd
 import logging
+import warnings
+import ast
+import os
+import re
 
+warnings.filterwarnings("ignore")
 
 
 
@@ -35,6 +40,8 @@ def get_rss_feed_stackoverflow(tag: str) -> pd.DataFrame:
 
     number_of_entries = len(feed.entries)
 
+    
+
     if number_of_entries == 0:
         AssertionError("No entries found in the feed")
     
@@ -58,6 +65,8 @@ def get_rss_feed_stackoverflow(tag: str) -> pd.DataFrame:
         # Add the new row to the dataframe
         df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
 
+
+    print((f"{len(df)} entries retrieved from the feed"))
     
     
     logging.info(f"Data retrieved from the RSS feed: {df.shape[0]} entries")
@@ -67,6 +76,7 @@ def get_rss_feed_stackoverflow(tag: str) -> pd.DataFrame:
 
 
 df = get_rss_feed_stackoverflow("r")
+
 
 def check_data_quality(df: pd.DataFrame) -> None:
 
@@ -86,6 +96,71 @@ def check_data_quality(df: pd.DataFrame) -> None:
     assert pd.api.types.is_datetime64_any_dtype(df['Published']), "Erreur : 'date_col' n'est pas au format datetime"
     logging.info("Data quality checked")
 
-
-
 check_data_quality(df)
+
+
+def parsed_chain(df: pd.DataFrame) -> None:
+
+    """
+    Parse all the chain column (type of data) and transform it in string or array
+
+    :param df: the dataframe with the data
+    :return df: the dataframe with the data without chain 
+    
+    """
+    df['Tags_list'] = df['Tags'].apply(lambda x: [item['term'] for item in ast.literal_eval(x)])
+
+    df['Author_link'] = df['Author Detail'].apply(lambda x: ast.literal_eval(x)['href'] if 'href' in ast.literal_eval(x) else None)
+
+
+    df = df.drop(columns=['Author Detail', 'Tags', 'Category'])  # delete unnecessary columns
+
+
+    return df
+
+df = parsed_chain(df)
+
+
+
+
+def store_r_code_gcp_storage(df: pd.DataFrame) -> None:
+    """
+    Store the R code provide by the user in a r file in a google cloud storage
+
+    :param df: the dataframe with the data
+    :return: None
+    
+    """
+    import os
+    import re
+    
+    # Créer un dossier pour stocker les fichiers s'il n'existe pas
+    output_dir = "stackoverflow_codes"
+    os.makedirs(output_dir, exist_ok=True)
+
+    for index, row in df.iterrows():
+        # Get the R code from the row
+        r_code = row['Summary']
+        
+        # Get the ID of the row - extrait uniquement les chiffres après "q/"
+        full_id = row['ID']
+        # Utiliser une expression régulière pour extraire seulement le nombre après "q/"
+        id_match = re.search(r'q/(\d+)', str(full_id))
+        if id_match:
+            id = id_match.group(1)  # Le premier groupe capturé (les chiffres)
+        else:
+            id = "unknown"  # Valeur par défaut si le pattern n'est pas trouvé
+        
+        # Formater la date pour éviter les caractères spéciaux
+        update_date = re.sub(r'[:/\?<>\\:\*\|"]', '_', str(row['Updated']))
+        
+        # Create the file name
+        file_name = f"{output_dir}/stackoverflow_code_{id}_{update_date}.R"
+        
+        # Store the file
+        with open(file_name, 'w') as f:
+            f.write(r_code)
+            logging.info(f"File {file_name} stored in the google cloud storage")
+
+
+store_r_code_gcp_storage(df)
