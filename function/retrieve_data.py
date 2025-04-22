@@ -131,8 +131,6 @@ def store_r_code_gcp_storage(df: pd.DataFrame) -> None:
     :return: None
     
     """
-    import os
-    import re
     
     # Créer un dossier pour stocker les fichiers s'il n'existe pas
     output_dir = "stackoverflow_codes"
