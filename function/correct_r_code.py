@@ -37,6 +37,64 @@ class r_code:
                 ref_ligne_code["and_code"].append(i)
 
         return ref_ligne_code
+    
+
+    @staticmethod
+    def janitor_code(self,r_code: str) -> str:
+        """
+        Clean the R code by removing the <code> and </code></pre> tags
+        :param r_code: the R code as a string
+        :return: the cleaned R code as a string
+        """
+        # remove the <code> and </code></pre> tags
+        r_code = re.sub(r'<code>', '', r_code)
+        r_code = re.sub(r'</code></pre>', '', r_code)
+        # remove the <pre> and </pre> tags
+        r_code = re.sub(r'<pre>', '', r_code)
+        r_code = re.sub(r'</pre>', '', r_code)
+
+        bornes_code = r_code.retrieve_line_index_code(r_code)
+
+        code_list = []
+
+    # Maintenant, vérifions chaque ligne
+        lignes = r_code.splitlines()
+        
+        for i, line in enumerate(lignes):
+            est_dans_code = False
+        for j in range(len(bornes_code["begin_code"])):
+            debut = bornes_code["begin_code"][j]
+            fin = bornes_code["and_code"][j]
+            if debut <= i <= fin:
+                est_dans_code = True
+                code_list.append(line)
+            
+                break
+    
+        if est_dans_code:
+            print(f"ligne {i} dans le code")
+
+        else:
+            print(f"ligne {i} pas dans le code")
+
+        return r_code
         
     
         
+with open("requirements.txt", "r") as f:
+    lignes = f.readlines()
+
+ligne_a_modifier = [2,4,5]   # attention : index 2 = 3ème ligne
+position = 0
+caractere_a_ajouter = "#"
+
+for numero in ligne_a_modifier:
+    if lignes[numero].strip()  != "":
+        lignes[numero] = (
+            lignes[numero][:position] +
+            caractere_a_ajouter +
+            lignes[numero][position:]
+        )
+
+with open("fichier.txt", "w") as f:
+    f.writelines(lignes)
