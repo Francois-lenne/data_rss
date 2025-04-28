@@ -6,6 +6,7 @@ import dataclasses
 class r_code:
     r_code: str
 
+@staticmethod
 def add_comment_code(texte:str, caractere_a_ajouter:str ) -> str:
     """
     Put in comment all the lines thar are not in the <code> and </code></pre> tags
