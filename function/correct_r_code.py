@@ -2,10 +2,9 @@ import re
 import dataclasses
 
 
+@dataclasses.dataclass
 class r_code:
-
-    def __init__(self, r_code: str):
-        self.r_code  = r_code
+    r_code: str
 
 def add_comment_code(texte:str, caractere_a_ajouter:str ) -> str:
     """
