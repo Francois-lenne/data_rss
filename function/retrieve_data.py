@@ -1,6 +1,4 @@
-
-
- # libraries
+# libraries
 import feedparser
 import pandas as pd
 import logging
@@ -8,6 +6,8 @@ import warnings
 import ast
 import os
 import re
+import correct_r_code
+# from google.cloud import bigquery
 
 warnings.filterwarnings("ignore")
 
@@ -121,6 +121,7 @@ def parsed_chain(df: pd.DataFrame) -> None:
 df = parsed_chain(df)
 
 
+print(df.head())
 
 
 def store_r_code_gcp_storage(df: pd.DataFrame) -> None:
@@ -154,11 +155,39 @@ def store_r_code_gcp_storage(df: pd.DataFrame) -> None:
         
         # Create the file name
         file_name = f"{output_dir}/stackoverflow_code_{id}_{update_date}.R"
-        
+
+        r_code_modfied = correct_r_code.add_comment_code(r_code, "# ")        
         # Store the file
         with open(file_name, 'w') as f:
-            f.write(r_code)
+            f.write(r_code_modfied)
             logging.info(f"File {file_name} stored in the google cloud storage")
 
 
 store_r_code_gcp_storage(df)
+
+
+def load_bigquery(df: pd.DataFrame, project_id: str, dataset_id: str) -> None:
+    """
+    Load the data in a bigquery table
+
+    :param df: the dataframe with the data
+    :param project_id: the id of the project
+    :param dataset_id: the id of the dataset
+    :return: None
+    
+    """
+    
+
+    # Create a BigQuery client
+    client = bigquery.Client(project=project_id)
+
+    # Define the table ID
+    table_id = f"{project_id}.{dataset_id}.stackoverflow_data"
+
+    # Load the dataframe into BigQuery
+    job = client.load_table_from_dataframe(df, table_id)
+
+    # Wait for the job to complete
+    job.result()
+
+    logging.info(f"Data loaded in BigQuery table {table_id}")
