@@ -9,6 +9,8 @@ import re
 import correct_r_code
 from google.cloud import storage
 from google.cloud import bigquery
+from datetime import datetime
+import pytz
 
 warnings.filterwarnings("ignore")
 
@@ -171,11 +173,11 @@ def store_r_code_gcp_storage(df: pd.DataFrame, bucket_name: str) -> None:
         
 
 # Utilisation
-store_r_code_gcp_storage(df, os.getenv('BUCKET_NAME'))
+# store_r_code_gcp_storage(df, os.getenv('BUCKET_NAME'))
 
 
 
-def load_bigquery(df: pd.DataFrame, project_id: str, dataset_id: str) -> None:
+def load_bigquery(df: pd.DataFrame, dataset_id: str) -> None:
     """
     Load the data in a bigquery table
 
@@ -185,18 +187,31 @@ def load_bigquery(df: pd.DataFrame, project_id: str, dataset_id: str) -> None:
     :return: None
     
     """
-    df_for_bg = df.drop(columns=['Summary'])
+
+    # modify the dataframe to match the BigQuery schema
+    df_for_bg = df.drop(columns=['Summary']).copy()
+    
+    df_for_bg = df_for_bg.astype(str)
+    df['Title'] = df['Title'].fillna('EMPTY')  # Ou un placeholder du type 'UNKNOWN'
+    paris_tz = pytz.timezone('Europe/Paris')
+    df_for_bg['ingestion_timestamp'] = datetime.now(paris_tz)
 
     # Create a BigQuery client
-    client = bigquery.Client(project=project_id)
+    client = bigquery.Client()
 
     # Define the table ID
-    table_id = f"{project_id}.{dataset_id}.stackoverflow_data"
+    project_id = client.project
+    table_id = f"{project_id}.{dataset_id}.stackoverflow_r_bronze"
 
     # Load the dataframe into BigQuery
-    job = client.load_table_from_dataframe(df_for_bg, table_id)
+    job_config = bigquery.LoadJobConfig(write_disposition="WRITE_APPEND")
+
+    job = client.load_table_from_dataframe(df_for_bg, table_id, job_config=job_config)
 
     # Wait for the job to complete
     job.result()
 
     logging.info(f"Data loaded in BigQuery table {table_id}")
+
+
+load_bigquery(df, 'rss')

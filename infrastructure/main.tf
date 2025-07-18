@@ -105,13 +105,13 @@ resource "google_bigquery_table" "stackoverflow_r_bronze" {
     {
       name = "TITLE"
       type = "STRING"
-      mode = "REQUIRED"
+      mode = "NULLABLE"
       description = "Titre de l'article"
     },
     {
       name = "LINK"
       type = "STRING"
-      mode = "REQUIRED"
+      mode = "NULLABLE"
       description = "URL de l'article"
     },
     {
@@ -135,13 +135,13 @@ resource "google_bigquery_table" "stackoverflow_r_bronze" {
     {
       name = "TAGS_LIST"
       type = "STRING"
-      mode = "REPEATED"
+      mode = "NULLABLE"
       description = "Tags associés à l'article"
     },
     {
       name = "Author_link"
       type = "STRING"
-      mode = "REPEATED"
+      mode = "NULLABLE"
       description = "Lien vers le profil de l'auteur"
     },
     {
