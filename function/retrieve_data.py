@@ -7,6 +7,7 @@ import ast
 import os
 import re
 import correct_r_code
+import functions_framework
 from google.cloud import storage
 from google.cloud import bigquery
 from datetime import datetime
@@ -77,7 +78,6 @@ def get_rss_feed_stackoverflow(tag: str) -> pd.DataFrame:
     return df
 
 
-df = get_rss_feed_stackoverflow("r")
 
 
 def check_data_quality(df: pd.DataFrame) -> None:
@@ -98,7 +98,6 @@ def check_data_quality(df: pd.DataFrame) -> None:
     assert pd.api.types.is_datetime64_any_dtype(df['Published']), "Erreur : 'date_col' n'est pas au format datetime"
     logging.info("Data quality checked")
 
-check_data_quality(df)
 
 
 def parsed_chain(df: pd.DataFrame) -> None:
@@ -119,11 +118,6 @@ def parsed_chain(df: pd.DataFrame) -> None:
 
 
     return df
-
-df = parsed_chain(df)
-
-
-print(df.head())
 
 
 def store_r_code_gcp_storage(df: pd.DataFrame, bucket_name: str) -> None:
@@ -170,10 +164,6 @@ def store_r_code_gcp_storage(df: pd.DataFrame, bucket_name: str) -> None:
         
         logging.info(f"File {file_name} stored in Google Cloud Storage")
 
-        
-
-# Utilisation
-# store_r_code_gcp_storage(df, os.getenv('BUCKET_NAME'))
 
 
 
@@ -214,4 +204,37 @@ def load_bigquery(df: pd.DataFrame, dataset_id: str) -> None:
     logging.info(f"Data loaded in BigQuery table {table_id}")
 
 
-load_bigquery(df, 'rss')
+
+
+# À la fin de ton fichier retrieve_data.py
+import functions_framework
+
+@functions_framework.http
+def main(request):
+    """
+    Main function to run the script - Cloud Function entry point
+    """
+    try:
+        # Get the RSS feed data
+        df = get_rss_feed_stackoverflow("r")
+        
+        # Check the data quality
+        check_data_quality(df)
+        
+        # Parse the chain columns
+        df = parsed_chain(df)
+        
+        # Store the R code in Google Cloud Storage
+        store_r_code_gcp_storage(df, os.getenv('BUCKET_NAME'))
+        
+        # Load the data in BigQuery
+        load_bigquery(df, 'rss')
+
+        return {"message": "Success", "status": 200}, 200
+    
+    except Exception as e:
+        return {"error": str(e), "status": 500}, 500
+
+# Garde ton if __name__ == "__main__": pour les tests locaux
+if __name__ == "__main__":
+    main(None)  # Passe None pour les tests locaux
