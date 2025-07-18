@@ -1,0 +1,28 @@
+steps:
+  # Récupère le secret depuis Secret Manager
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "Récupération du bucket name depuis Secret Manager..."
+        BUCKET_NAME=$(gcloud secrets versions access latest --secret="_BUCKET_NAME")
+        echo "BUCKET_NAME=$$BUCKET_NAME" >> /workspace/env_vars.txt
+
+  # Deploy Cloud Function avec le secret
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        source /workspace/env_vars.txt
+        gcloud functions deploy rss-collector \
+          --source=./function \
+          --entry-point=main \
+          --runtime=python311 \
+          --trigger-http \
+          --allow-unauthenticated \
+          --region=europe-west1 \
+          --memory=512MB \
+          --timeout=300s \
+          --set-env-vars=PROJECT_ID=${PROJECT_ID},BUCKET_NAME=$$BUCKET_NAME
