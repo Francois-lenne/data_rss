@@ -7,10 +7,11 @@ import ast
 import os
 import re
 import correct_r_code
+from google.cloud import storage
+
 # from google.cloud import bigquery
 
 warnings.filterwarnings("ignore")
-
 
 
 def get_rss_feed_stackoverflow(tag: str) -> pd.DataFrame:
@@ -124,18 +125,21 @@ df = parsed_chain(df)
 print(df.head())
 
 
-def store_r_code_gcp_storage(df: pd.DataFrame) -> None:
+def store_r_code_gcp_storage(df: pd.DataFrame, bucket_name: str) -> None:
     """
-    Store the R code provide by the user in a r file in a google cloud storage
+    Store the R code provided by the user in R files in Google Cloud Storage
 
     :param df: the dataframe with the data
+    :param bucket_name: nom du bucket GCS
     :return: None
-    
     """
+
+    print(os.getenv('BUCKET_NAME'))
     
-    # Créer un dossier pour stocker les fichiers s'il n'existe pas
-    output_dir = "stackoverflow_codes"
-    os.makedirs(output_dir, exist_ok=True)
+    # Initialiser le client GCS
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
+
 
 
     for index, row in df.iterrows():
@@ -154,17 +158,22 @@ def store_r_code_gcp_storage(df: pd.DataFrame) -> None:
         # Formater la date pour éviter les caractères spéciaux
         update_date = re.sub(r'[:/\?<>\\:\*\|"]', '_', str(row['Updated']))
         
-        # Create the file name
-        file_name = f"{output_dir}/stackoverflow_code_{id}_{update_date}.R"
+        # Create the file name (chemin dans GCS)
+        file_name = f"stackoverflow_codes/stackoverflow_code_{id}_{update_date}.R"
 
-        r_code_modfied = correct_r_code.add_comment_code(r_code, "# ")        
-        # Store the file
-        with open(file_name, 'w', encoding='utf-8') as f:
-            f.write(r_code_modfied)
-            logging.info(f"File {file_name} stored in the google cloud storage")
+        r_code_modified = correct_r_code.add_comment_code(r_code, "# ")        
+        
+        # Créer un blob et charger le contenu directement
+        blob = bucket.blob(file_name)
+        blob.upload_from_string(r_code_modified, content_type='text/plain')
+        
+        logging.info(f"File {file_name} stored in Google Cloud Storage")
 
+        
 
-store_r_code_gcp_storage(df)
+# Utilisation
+store_r_code_gcp_storage(df, os.getenv('BUCKET_NAME'))
+
 
 
 def load_bigquery(df: pd.DataFrame, project_id: str, dataset_id: str) -> None:
