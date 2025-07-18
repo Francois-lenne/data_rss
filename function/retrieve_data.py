@@ -137,6 +137,7 @@ def store_r_code_gcp_storage(df: pd.DataFrame) -> None:
     output_dir = "stackoverflow_codes"
     os.makedirs(output_dir, exist_ok=True)
 
+
     for index, row in df.iterrows():
         # Get the R code from the row
         r_code = row['Summary']
@@ -158,7 +159,7 @@ def store_r_code_gcp_storage(df: pd.DataFrame) -> None:
 
         r_code_modfied = correct_r_code.add_comment_code(r_code, "# ")        
         # Store the file
-        with open(file_name, 'w') as f:
+        with open(file_name, 'w', encoding='utf-8') as f:
             f.write(r_code_modfied)
             logging.info(f"File {file_name} stored in the google cloud storage")
 

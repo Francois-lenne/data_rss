@@ -3,3 +3,8 @@ flux_rss/*
 *.ipynb
 *.R
 *.pyc
+.terraform
+*.tfstate
+*.tfstate.backup
+*.tfvars
+*.terraform.lock.hcl
