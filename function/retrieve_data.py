@@ -8,8 +8,7 @@ import os
 import re
 import correct_r_code
 from google.cloud import storage
-
-# from google.cloud import bigquery
+from google.cloud import bigquery
 
 warnings.filterwarnings("ignore")
 
@@ -186,7 +185,7 @@ def load_bigquery(df: pd.DataFrame, project_id: str, dataset_id: str) -> None:
     :return: None
     
     """
-    
+    df_for_bg = df.drop(columns=['Summary'])
 
     # Create a BigQuery client
     client = bigquery.Client(project=project_id)
@@ -195,7 +194,7 @@ def load_bigquery(df: pd.DataFrame, project_id: str, dataset_id: str) -> None:
     table_id = f"{project_id}.{dataset_id}.stackoverflow_data"
 
     # Load the dataframe into BigQuery
-    job = client.load_table_from_dataframe(df, table_id)
+    job = client.load_table_from_dataframe(df_for_bg, table_id)
 
     # Wait for the job to complete
     job.result()

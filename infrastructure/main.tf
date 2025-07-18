@@ -69,7 +69,99 @@ resource "google_storage_bucket" "rss_data_bucket" {
   }
 }
 
-# Output pour l'application Python
+# Dataset BigQuery pour les données RSS
+resource "google_bigquery_dataset" "rss_dataset" {
+  dataset_id    = "rss"
+  friendly_name = "RSS Data Dataset"
+  description   = "Dataset pour stocker les données RSS collectées"
+  location      = "EU"
+
+
+  
+  # Labels pour organisation
+  labels = {
+    environnement = "dev"
+    projet        = "data-rss"
+    type          = "bigquery"
+  }
+}
+
+# Table BigQuery pour StackOverflow RSS
+resource "google_bigquery_table" "stackoverflow_r_bronze" {
+  dataset_id = google_bigquery_dataset.rss_dataset.dataset_id
+  table_id   = "stackoverflow_r_bronze"
+  
+  # Suppression des données si on détruit la table
+  deletion_protection = false
+  
+  # Schéma de la table
+  schema = jsonencode([
+    {
+      name = "ID"
+      type = "STRING"
+      mode = "REQUIRED"
+      description = "ID unique de l'article RSS"
+    },
+    {
+      name = "TITLE"
+      type = "STRING"
+      mode = "REQUIRED"
+      description = "Titre de l'article"
+    },
+    {
+      name = "LINK"
+      type = "STRING"
+      mode = "REQUIRED"
+      description = "URL de l'article"
+    },
+    {
+      name = "Published"
+      type = "STRING"
+      mode = "NULLABLE"
+      description = "Date de publication"
+    },
+    {
+      name = "Updated"
+      type = "STRING"
+      mode = "NULLABLE"
+      description = "Date de mise à jour de l'article"
+    },
+    {
+      name = "AUTHOR"
+      type = "STRING"
+      mode = "NULLABLE"
+      description = "Auteur de l'article"
+    },
+    {
+      name = "TAGS_LIST"
+      type = "STRING"
+      mode = "REPEATED"
+      description = "Tags associés à l'article"
+    },
+    {
+      name = "Author_link"
+      type = "STRING"
+      mode = "REPEATED"
+      description = "Lien vers le profil de l'auteur"
+    },
+    {
+      name = "ingestion_timestamp"
+      type = "TIMESTAMP"
+      mode = "REQUIRED"
+      description = "Timestamp d'ingestion des données"
+    }
+  ])
+  
+  # Labels pour organisation
+  labels = {
+    environnement = "dev"
+    projet        = "data-rss"
+    source        = "stackoverflow"
+    layer         = "bronze"
+  }
+}
+
+# Outputs pour l'application Python
 output "rss_bucket_name" {
   value = google_storage_bucket.rss_data_bucket.name
   description = "Nom du bucket pour les données RSS"
@@ -78,4 +170,19 @@ output "rss_bucket_name" {
 output "rss_bucket_url" {
   value = google_storage_bucket.rss_data_bucket.url
   description = "URL du bucket pour les données RSS"
+}
+
+output "bigquery_dataset_id" {
+  value = google_bigquery_dataset.rss_dataset.dataset_id
+  description = "ID du dataset BigQuery"
+}
+
+output "bigquery_table_id" {
+  value = google_bigquery_table.stackoverflow_r_bronze.table_id
+  description = "ID de la table BigQuery StackOverflow"
+}
+
+output "bigquery_table_full_id" {
+  value = "${var.project_id}.${google_bigquery_dataset.rss_dataset.dataset_id}.${google_bigquery_table.stackoverflow_r_bronze.table_id}"
+  description = "ID complet de la table BigQuery (pour les requêtes)"
 }
