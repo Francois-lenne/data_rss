@@ -23,27 +23,21 @@ RSS Sources → Python Scraper → Data Processing → Data Lake Storage → Ana
 - **Infrastructure**: Terraform
 - **Programming Language**: Python
 - **Data Processing**: 
-  - RSS feed parsing (feedparser, BeautifulSoup)
+  - RSS feed parsing (feedparser)
   - Data transformation (pandas)
-- **Storage**: Cloud Data Lake
+- **Storage**: Google Cloud Storage
 
 ## 📁 Project Structure
 
 ```
 data_rss/
-├── terraform/              # Infrastructure as Code
+├── Infrastructure/        # Infrastructure as Code
 │   ├── main.tf            # Main Terraform configuration
 │   ├── variables.tf       # Variable definitions
-│   ├── outputs.tf         # Output values
-│   └── modules/           # Reusable Terraform modules
-├── src/                   # Source code
-│   ├── extractors/        # RSS feed extraction logic
-│   ├── transformers/      # Data transformation logic
-│   ├── loaders/           # Data lake loading logic
-│   └── utils/             # Utility functions
-├── config/                # Configuration files
-├── tests/                 # Unit and integration tests
-├── requirements.txt       # Python dependencies
+├── function/                   # Cloud function source
+│   ├── correct_r_code.py       # janitor RSS R files
+│   ├── main.py                 # main python file run by the function
+│   ├── requirements.txt       # python package use
 └── README.md             # This file
 ```
 
@@ -52,7 +46,7 @@ data_rss/
 ### Prerequisites
 
 - Python 3.8+
-- Terraform 1.0+
+- Terraform 6.0+
 - GCP account
 - Git
 
@@ -61,7 +55,7 @@ data_rss/
 
 ### 1. RSS Feed Extraction
 - Fetches RSS feeds from configured sources
-- Parses XML/RSS content
+- Parses RSS content
 
 ### 2. Data Transformation
 - Cleans and normalizes feed data
@@ -80,7 +74,7 @@ data_rss/
 
 ### Deploy Infrastructure
 ```bash
-cd terraform
+cd Infrastructure
 terraform plan
 terraform apply
 ```
